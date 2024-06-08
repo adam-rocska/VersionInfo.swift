@@ -1,0 +1,28 @@
+{
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "sourceLanguages": [
+        "swift"
+      ],
+      "args": [ ],
+      "cwd": "${workspaceFolder:VersionInfo.swift}",
+      "name": "Debug version-info-gen",
+      "program": "${workspaceFolder:VersionInfo.swift}/.build/debug/version-info-gen",
+      "preLaunchTask": "swift: Build Debug version-info-gen"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "sourceLanguages": [
+        "swift"
+      ],
+      "args": [ ],
+      "cwd": "${workspaceFolder:VersionInfo.swift}",
+      "name": "Release version-info-gen",
+      "program": "${workspaceFolder:VersionInfo.swift}/.build/release/version-info-gen",
+      "preLaunchTask": "swift: Build Release version-info-gen"
+    }
+  ]
+}

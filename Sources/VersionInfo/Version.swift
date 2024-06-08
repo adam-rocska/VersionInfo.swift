@@ -1,3 +1,1 @@
-public class Version {
-
-}
+public typealias Version = (name: String, hash: String)
