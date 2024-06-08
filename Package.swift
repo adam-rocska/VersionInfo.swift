@@ -22,9 +22,7 @@ let package = Package(
     ),
     .executableTarget(
       name: "version-info-gen",
-      dependencies: [
-        .product(name: "ArgumentParser", package: "swift-argument-parser")
-      ]
+      dependencies: [.product(name: "ArgumentParser", package: "swift-argument-parser")]
     ),
   ]
 )
