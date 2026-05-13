@@ -34,12 +34,12 @@ struct VersionInfoGenerator: AsyncParsableCommand {
       typealias Versions = (head: Version, heads: [Version], tags: [Version])
 
       let versions: Versions = (
-        head: ("\(refs.head.name)", "\(refs.head.hash)"),
+        head: \(refs.head.tuple),
         heads: [
-          \(refs.heads.map { "(\"\($0.name)\", \"\($0.hash)\")" }.joined(separator: ",\n"))
+          \(refs.heads.map(\.tuple).joined(separator: ",\n"))
         ],
         tags: [
-          \(refs.tags.map { "(\"\($0.name)\", \"\($0.hash)\")" }.joined(separator: ",\n"))
+          \(refs.tags.map(\.tuple).joined(separator: ",\n"))
         ]
       )
       """
@@ -55,5 +55,11 @@ struct VersionInfoGenerator: AsyncParsableCommand {
     } else {
       print(swiftCode)
     }
+  }
+}
+
+fileprivate extension Ref {
+  var tuple: String {
+    "(\(String(reflecting: name)), \(String(reflecting: hash)))"
   }
 }

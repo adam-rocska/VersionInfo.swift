@@ -3,13 +3,27 @@ import Foundation
 struct GitDirectory {
   let root: URL
 
-  private func files(in directory: URL) -> [URL] {
-    (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil))
-      ?? []
+  private func refFiles(in directory: URL) -> [URL] {
+    FileManager.default
+      .enumerator(
+        at: directory,
+        includingPropertiesForKeys: [.isRegularFileKey]
+      )?
+      .compactMap { $0 as? URL }
+      .filter(\.isRegularFile)
+      .sorted { $0.path < $1.path } ?? []
   }
 
-  var head: URL { root.appending(component: "HEAD") }
-  var heads: [URL] { files(in: root.appending(component: "refs/heads")) }
-  var tags: [URL] { files(in: root.appending(component: "refs/tags")) }
+  var head: URL { root.appendingPathComponent("HEAD") }
+  var headsDirectory: URL { root.appendingPathComponent("refs/heads", isDirectory: true) }
+  var tagsDirectory: URL { root.appendingPathComponent("refs/tags", isDirectory: true) }
+  var heads: [URL] { refFiles(in: headsDirectory) }
+  var tags: [URL] { refFiles(in: tagsDirectory) }
 
+}
+
+extension URL {
+  fileprivate var isRegularFile: Bool {
+    (try? resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true
+  }
 }

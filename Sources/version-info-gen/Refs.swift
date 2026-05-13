@@ -11,7 +11,7 @@ struct Refs {
     guard let head = Ref(HEAD: git.head) else { return nil }
 
     self.head = head
-    heads = git.heads.compactMap(Ref.init(file:))
-    tags = git.tags.compactMap(Ref.init(file:))
+    heads = git.heads.compactMap { Ref(file: $0, relativeTo: git.headsDirectory) }
+    tags = git.tags.compactMap { Ref(file: $0, relativeTo: git.tagsDirectory) }
   }
 }

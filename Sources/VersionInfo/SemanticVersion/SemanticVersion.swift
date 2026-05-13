@@ -10,11 +10,14 @@ public struct SemanticVersion {
   }
 
   public init?(_ string: String) {
-    let components = string.split(separator: ".").map(String.init)
+    let components = string.split(
+      separator: ".",
+      omittingEmptySubsequences: false
+    )
     guard components.count == 3,
-      let major = Int(components[0]),
-      let minor = Int(components[1]),
-      let patch = Int(components[2])
+      let major = Int(versionComponent: components[0]),
+      let minor = Int(versionComponent: components[1]),
+      let patch = Int(versionComponent: components[2])
     else {
       return nil
     }
@@ -22,5 +25,15 @@ public struct SemanticVersion {
   }
 
   public init?(_ version: Version) { self.init(version.name) }
+}
 
+extension Int {
+  fileprivate init?<VersionComponent>(
+    versionComponent component: VersionComponent
+  )
+  where VersionComponent: StringProtocol {
+    guard !component.isEmpty else { return nil }
+    guard component.allSatisfy(\.isNumber) else { return nil }
+    self.init(component)
+  }
 }
