@@ -31,5 +31,29 @@ let package = Package(
         .product(name: "ArgumentParser", package: "swift-argument-parser")
       ]
     ),
+    .target(
+      name: "VersionInfoTestSupport",
+      path: "Tests/Support"
+    ),
+    .testTarget(
+      name: "VersionInfoTests",
+      dependencies: ["VersionInfo", "VersionInfoTestSupport"],
+      path: "Tests/Unit/VersionInfoTests"
+    ),
+    .testTarget(
+      name: "VersionInfoGenTests",
+      dependencies: ["version-info-gen", "VersionInfoTestSupport"],
+      path: "Tests/Unit/VersionInfoGenTests"
+    ),
+    .testTarget(
+      name: "VersionInfoIntegrationTests",
+      dependencies: ["VersionInfoTestSupport"],
+      path: "Tests/Regression/VersionInfoIntegrationTests"
+    ),
+    .testTarget(
+      name: "VersionInfoUserAcceptanceTests",
+      dependencies: ["VersionInfoTestSupport"],
+      path: "Tests/UserAcceptance/VersionInfoUserAcceptanceTests"
+    ),
   ]
 )
