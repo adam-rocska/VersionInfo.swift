@@ -3,34 +3,21 @@ import PackagePlugin
 
 @main
 struct VersionInfoPlugin: BuildToolPlugin {
-  enum Error: Swift.Error, CustomStringConvertible {
-    case noGitDirectory(in: Path)
-
-    var description: String {
-      switch self {
-      case let .noGitDirectory(path):
-        return "No .git directory found in \(path)."
-      }
-    }
-  }
-
   func createBuildCommands(context: PluginContext, target: Target) throws -> [Command] {
-    guard let gitDirectory = URL(string: context.package.directory.appending(".git").string) else {
-      throw Error.noGitDirectory(in: context.package.directory)
-    }
+    let gitDirectory = context.package.directoryURL.appendingPathComponent(".git", isDirectory: true)
 
-    let outputDir = context.pluginWorkDirectory.appending("VersionInfoGenerated")
+    let outputDir = context.pluginWorkDirectoryURL.appendingPathComponent("VersionInfoGenerated", isDirectory: true)
     try FileManager.default.createDirectory(
-      atPath: outputDir.string,
+      at: outputDir,
       withIntermediateDirectories: true)
 
     return [
       .buildCommand(
         displayName: "Running version-info-gen",
-        executable: try context.tool(named: "version-info-gen").path,
-        arguments: [gitDirectory, "--output-dir", outputDir],
+        executable: try context.tool(named: "version-info-gen").url,
+        arguments: [gitDirectory.path, "--output-dir", outputDir.path],
         outputFiles: [
-          outputDir.appending("VersionInfo.swift")
+          outputDir.appendingPathComponent("VersionInfo.swift")
         ]
       )
     ]
