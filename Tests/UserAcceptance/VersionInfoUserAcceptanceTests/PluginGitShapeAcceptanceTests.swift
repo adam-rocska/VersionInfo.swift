@@ -266,4 +266,54 @@ struct PluginGitShapeAcceptanceTests {
     ])
     #expect(secondResult.stdout.contains("head=main:\(GitFixture.releaseHash)"))
   }
+
+  @Test("Plugin includes new loose refs added after a first build")
+  func pluginIncludesNewLooseRefsAfterFirstBuild() throws {
+    let temporaryDirectory = try TemporaryDirectory()
+    let consumerDirectory = try temporaryDirectory.createDirectory("NewRefsConsumer")
+    try GitFixture.create(in: consumerDirectory, tags: [:])
+
+    let consumer = try ConsumerPackage.create(
+      in: consumerDirectory,
+      name: "NewRefsConsumer",
+      dependencies: "",
+      targetDependencies: "",
+      plugins: ".plugin(name: \"VersionInfoPlugin\", package: \"VersionInfo.swift\"),",
+      main: """
+      print("tags=\\(versions.tags.map(\\.name).sorted().joined(separator: ","))")
+      """
+    )
+
+    let swiftPM = try SwiftPM(
+      workingDirectory: consumer.directory,
+      stateDirectory: temporaryDirectory.appending("swiftpm-state")
+    )
+
+    let firstResult = try swiftPM.run([
+      "run",
+      consumer.executableName,
+    ])
+    #expect(firstResult.stdout.contains("tags="))
+
+    let tag = consumerDirectory
+      .appendingPathComponent(".git", isDirectory: true)
+      .appendingPathComponent("refs", isDirectory: true)
+      .appendingPathComponent("tags", isDirectory: true)
+      .appendingPathComponent("1.0.0")
+    try FileManager.default.createDirectory(
+      at: tag.deletingLastPathComponent(),
+      withIntermediateDirectories: true
+    )
+    try "\(GitFixture.tagHash)\n".write(
+      to: tag,
+      atomically: true,
+      encoding: .utf8
+    )
+
+    let secondResult = try swiftPM.run([
+      "run",
+      consumer.executableName,
+    ])
+    #expect(secondResult.stdout.contains("tags=1.0.0"))
+  }
 }
