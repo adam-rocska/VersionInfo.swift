@@ -96,7 +96,7 @@ jobs:
             VersionInfo.doccarchive
 
       - name: Upload documentation archive
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: VersionInfo-${{ steps.version.outputs.version }}-DocC
           path: VersionInfo.doccarchive.tgz
