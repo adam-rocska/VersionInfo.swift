@@ -26,7 +26,7 @@ public struct SemanticVersion: Sendable {
   /// Creates a semantic version from its components.
   ///
   /// Invalid metadata values assert in debug builds and are ignored in optimized
-  /// builds. Prefer ``init(_:)`` when accepting user or external input.
+  /// builds. Prefer ``init(_:)-(String)`` when accepting user or external input.
   public init(
     major: Int,
     minor: Int,

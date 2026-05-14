@@ -37,7 +37,7 @@ let versions: Versions
 ```
 
 The generated tuple shape intentionally matches ``Version``. This lets library
-users pass generated refs directly to ``SemanticVersion/init(_:)``.
+users pass generated refs directly to ``SemanticVersion/init(_:)-(Version)``.
 
 ## Semantic Versions
 
