@@ -132,4 +132,54 @@ struct PluginGitShapeAcceptanceTests {
     #expect(result.stdout.contains("heads-count=1"))
     #expect(result.stdout.contains("tags-count=0"))
   }
+
+  @Test("Plugin reads packed branch and tag refs")
+  func pluginReadsPackedRefs() throws {
+    let temporaryDirectory = try TemporaryDirectory()
+    let consumerDirectory = try temporaryDirectory.createDirectory("PackedRefsConsumer")
+    let gitDirectory = try temporaryDirectory.createDirectory("PackedRefsConsumer", ".git")
+    try "ref: refs/heads/main\n".write(
+      to: gitDirectory.appendingPathComponent("HEAD"),
+      atomically: true,
+      encoding: .utf8
+    )
+    _ = try temporaryDirectory.write(
+      """
+      # pack-refs with: peeled fully-peeled sorted
+      \(GitFixture.mainHash) refs/heads/main
+      \(GitFixture.releaseHash) refs/heads/release/2026.05
+      \(GitFixture.tagHash) refs/tags/release/1.2.3
+      ^9999999999999999999999999999999999999999
+
+      """,
+      to: "PackedRefsConsumer",
+      ".git",
+      "packed-refs"
+    )
+
+    let consumer = try ConsumerPackage.create(
+      in: consumerDirectory,
+      name: "PackedRefsConsumer",
+      dependencies: "",
+      targetDependencies: "",
+      plugins: ".plugin(name: \"VersionInfoPlugin\", package: \"VersionInfo.swift\"),",
+      main: """
+      print("head=\\(versions.head.name):\\(versions.head.hash)")
+      print("heads=\\(versions.heads.map(\\.name).sorted().joined(separator: ","))")
+      print("tags=\\(versions.tags.map(\\.name).sorted().joined(separator: ","))")
+      """
+    )
+
+    let result = try SwiftPM(
+      workingDirectory: consumer.directory,
+      stateDirectory: temporaryDirectory.appending("swiftpm-state")
+    ).run([
+      "run",
+      consumer.executableName,
+    ])
+
+    #expect(result.stdout.contains("head=main:\(GitFixture.mainHash)"))
+    #expect(result.stdout.contains("heads=main,release/2026.05"))
+    #expect(result.stdout.contains("tags=release/1.2.3"))
+  }
 }

@@ -27,6 +27,64 @@ struct GitReferenceTests {
     #expect(refs.tags.containsRef(name: "1.2.3", hash: GitFixture.tagHash))
   }
 
+  @Test("Reads branches and tags from packed refs")
+  func readsPackedRefs() throws {
+    let temporaryDirectory = try TemporaryDirectory()
+    let gitDirectory = try temporaryDirectory.createDirectory(".git")
+    _ = try temporaryDirectory.write("ref: refs/heads/main\n", to: ".git", "HEAD")
+    _ = try temporaryDirectory.write(
+      """
+      # pack-refs with: peeled fully-peeled sorted
+      \(GitFixture.mainHash) refs/heads/main
+      \(GitFixture.releaseHash) refs/heads/release/2026.05
+      \(GitFixture.tagHash) refs/tags/release/1.2.3
+      ^9999999999999999999999999999999999999999
+      not a valid packed ref line
+
+      """,
+      to: ".git",
+      "packed-refs"
+    )
+
+    let refs = try #require(Refs(gitDir: gitDirectory))
+
+    #expect(refs.head.matches(name: "main", hash: GitFixture.mainHash))
+    #expect(refs.heads.containsRef(name: "main", hash: GitFixture.mainHash))
+    #expect(refs.heads.containsRef(name: "release/2026.05", hash: GitFixture.releaseHash))
+    #expect(refs.tags.containsRef(name: "release/1.2.3", hash: GitFixture.tagHash))
+    #expect(refs.tags.count == 1)
+  }
+
+  @Test("Loose refs override packed refs with the same name")
+  func looseRefsOverridePackedRefs() throws {
+    let temporaryDirectory = try TemporaryDirectory()
+    let fixture = try GitFixture.create(
+      in: temporaryDirectory.url,
+      headHash: GitFixture.releaseHash,
+      branches: [
+        "main": GitFixture.releaseHash
+      ],
+      tags: [
+        "1.2.3": GitFixture.tagHash
+      ]
+    )
+    _ = try temporaryDirectory.write(
+      """
+      \(GitFixture.mainHash) refs/heads/main
+      \(GitFixture.featureHash) refs/tags/1.2.3
+
+      """,
+      to: ".git",
+      "packed-refs"
+    )
+
+    let refs = try #require(Refs(gitDir: fixture.gitDirectory))
+
+    #expect(refs.head.matches(name: "main", hash: GitFixture.releaseHash))
+    #expect(refs.heads.containsRef(name: "main", hash: GitFixture.releaseHash))
+    #expect(refs.tags.containsRef(name: "1.2.3", hash: GitFixture.tagHash))
+  }
+
   @Test("Preserves nested branch and tag names")
   func preservesNestedRefNames() throws {
     let temporaryDirectory = try TemporaryDirectory()

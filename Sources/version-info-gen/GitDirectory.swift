@@ -15,11 +15,63 @@ struct GitDirectory {
   }
 
   var head: URL { root.appendingPathComponent("HEAD") }
+  var headRef: Ref? { Ref(HEAD: head) ?? packedHeadRef }
   var headsDirectory: URL { root.appendingPathComponent("refs/heads", isDirectory: true) }
   var tagsDirectory: URL { root.appendingPathComponent("refs/tags", isDirectory: true) }
   var heads: [URL] { refFiles(in: headsDirectory) }
   var tags: [URL] { refFiles(in: tagsDirectory) }
+  var packedHeads: [Ref] { packedRefs.compactMap { $0.ref(in: "refs/heads/") } }
+  var packedTags: [Ref] { packedRefs.compactMap { $0.ref(in: "refs/tags/") } }
 
+  private var packedRefs: [PackedRef] {
+    let file = root.appendingPathComponent("packed-refs")
+    guard let contents = try? String(contentsOf: file) else { return [] }
+
+    return contents
+      .split(separator: "\n", omittingEmptySubsequences: false)
+      .compactMap(PackedRef.init(line:))
+  }
+
+  private var packedHeadRef: Ref? {
+    guard let path = try? String(contentsOf: head)
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+      .symbolicRefPath
+    else {
+      return nil
+    }
+
+    return packedRefs.first { $0.name == path }?.ref
+  }
+
+}
+
+private struct PackedRef {
+  let hash: String
+  let name: String
+
+  init?(line: String.SubSequence) {
+    let fields = line.split(whereSeparator: \.isWhitespace)
+    guard fields.count == 2,
+      let hash = fields.first,
+      let name = fields.last,
+      !hash.hasPrefix("#"),
+      !hash.hasPrefix("^")
+    else {
+      return nil
+    }
+
+    self.hash = String(hash)
+    self.name = String(name)
+  }
+
+  var ref: Ref {
+    Ref(name: name.refName, hash: hash)
+  }
+
+  func ref(in namespace: String) -> Ref? {
+    guard name.hasPrefix(namespace) else { return nil }
+    return ref
+  }
 }
 
 extension URL {

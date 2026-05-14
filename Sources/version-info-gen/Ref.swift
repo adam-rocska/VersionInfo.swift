@@ -76,13 +76,13 @@ extension URL {
 }
 
 extension String {
-  fileprivate var symbolicRefPath: String? {
+  var symbolicRefPath: String? {
     guard hasPrefix("ref:") else { return nil }
     let path = dropFirst("ref:".count).trimmingCharacters(in: .whitespacesAndNewlines)
     return path.isEmpty ? nil : path
   }
 
-  fileprivate var refName: String {
+  var refName: String {
     if hasPrefix("refs/heads/") {
       return String(dropFirst("refs/heads/".count))
     }
