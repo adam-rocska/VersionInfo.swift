@@ -85,6 +85,41 @@ struct GitReferenceTests {
     #expect(refs.tags.containsRef(name: "1.2.3", hash: GitFixture.tagHash))
   }
 
+  @Test("Resolves relative gitdir files")
+  func resolvesRelativeGitdirFiles() throws {
+    let temporaryDirectory = try TemporaryDirectory()
+    let worktree = try temporaryDirectory.createDirectory("worktree")
+    let storage = try temporaryDirectory.createDirectory("storage")
+    let fixture = try GitFixture.create(in: storage)
+    _ = try temporaryDirectory.write("gitdir: ../storage/.git\n", to: "worktree", ".git")
+
+    let refs = try #require(Refs(gitDir: worktree.appendingPathComponent(".git")))
+
+    #expect(refs.head.matches(name: "main", hash: GitFixture.mainHash))
+    #expect(refs.heads.containsRef(name: "main", hash: GitFixture.mainHash))
+    #expect(refs.tags.containsRef(name: "1.2.3", hash: GitFixture.tagHash))
+    #expect(fixture.gitDirectory.lastPathComponent == ".git")
+  }
+
+  @Test("Resolves absolute gitdir files")
+  func resolvesAbsoluteGitdirFiles() throws {
+    let temporaryDirectory = try TemporaryDirectory()
+    let worktree = try temporaryDirectory.createDirectory("worktree")
+    let storage = try temporaryDirectory.createDirectory("storage with spaces")
+    let fixture = try GitFixture.create(in: storage)
+    _ = try temporaryDirectory.write(
+      "gitdir: \(fixture.gitDirectory.path)\n",
+      to: "worktree",
+      ".git"
+    )
+
+    let refs = try #require(Refs(gitDir: worktree.appendingPathComponent(".git")))
+
+    #expect(refs.head.matches(name: "main", hash: GitFixture.mainHash))
+    #expect(refs.heads.containsRef(name: "main", hash: GitFixture.mainHash))
+    #expect(refs.tags.containsRef(name: "1.2.3", hash: GitFixture.tagHash))
+  }
+
   @Test("Preserves nested branch and tag names")
   func preservesNestedRefNames() throws {
     let temporaryDirectory = try TemporaryDirectory()

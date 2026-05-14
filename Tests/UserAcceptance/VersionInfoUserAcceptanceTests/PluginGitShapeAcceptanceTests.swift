@@ -182,4 +182,42 @@ struct PluginGitShapeAcceptanceTests {
     #expect(result.stdout.contains("heads=main,release/2026.05"))
     #expect(result.stdout.contains("tags=release/1.2.3"))
   }
+
+  @Test("Plugin resolves .git files pointing to Git directories")
+  func pluginResolvesGitdirFiles() throws {
+    let temporaryDirectory = try TemporaryDirectory()
+    let consumerDirectory = try temporaryDirectory.createDirectory("GitdirFileConsumer")
+    let storageDirectory = try temporaryDirectory.createDirectory("GitStorage")
+    try GitFixture.create(in: storageDirectory)
+    _ = try temporaryDirectory.write(
+      "gitdir: ../GitStorage/.git\n",
+      to: "GitdirFileConsumer",
+      ".git"
+    )
+
+    let consumer = try ConsumerPackage.create(
+      in: consumerDirectory,
+      name: "GitdirFileConsumer",
+      dependencies: "",
+      targetDependencies: "",
+      plugins: ".plugin(name: \"VersionInfoPlugin\", package: \"VersionInfo.swift\"),",
+      main: """
+      print("head=\\(versions.head.name):\\(versions.head.hash)")
+      print("heads=\\(versions.heads.map(\\.name).sorted().joined(separator: ","))")
+      print("tags=\\(versions.tags.map(\\.name).sorted().joined(separator: ","))")
+      """
+    )
+
+    let result = try SwiftPM(
+      workingDirectory: consumer.directory,
+      stateDirectory: temporaryDirectory.appending("swiftpm-state")
+    ).run([
+      "run",
+      consumer.executableName,
+    ])
+
+    #expect(result.stdout.contains("head=main:\(GitFixture.mainHash)"))
+    #expect(result.stdout.contains("heads=main"))
+    #expect(result.stdout.contains("tags=1.2.3"))
+  }
 }

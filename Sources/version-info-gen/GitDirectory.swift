@@ -3,6 +3,10 @@ import Foundation
 struct GitDirectory {
   let root: URL
 
+  init(root: URL) {
+    self.root = root.resolvedGitDirectory ?? root
+  }
+
   private func refFiles(in directory: URL) -> [URL] {
     FileManager.default
       .enumerator(
@@ -77,5 +81,23 @@ private struct PackedRef {
 extension URL {
   fileprivate var isRegularFile: Bool {
     (try? resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true
+  }
+
+  fileprivate var resolvedGitDirectory: URL? {
+    guard let contents = try? String(contentsOf: self) else { return nil }
+
+    let gitdir = contents.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard gitdir.hasPrefix("gitdir:") else { return nil }
+
+    let path = gitdir
+      .dropFirst("gitdir:".count)
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !path.isEmpty else { return nil }
+
+    return URL(
+      fileURLWithPath: path,
+      relativeTo: deletingLastPathComponent()
+    )
+    .standardizedFileURL
   }
 }
