@@ -11,6 +11,8 @@ struct SemanticVersionEdgeCaseTests {
     #expect(version.major == 12)
     #expect(version.minor == 34)
     #expect(version.patch == 56)
+    #expect(version.prerelease == nil)
+    #expect(version.buildMetadata == nil)
   }
 
   @Test("String literal initializer builds a valid version")

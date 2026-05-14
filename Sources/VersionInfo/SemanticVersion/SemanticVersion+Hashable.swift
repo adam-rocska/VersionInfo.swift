@@ -3,5 +3,6 @@ extension SemanticVersion: Hashable {
     hasher.combine(major)
     hasher.combine(minor)
     hasher.combine(patch)
+    hasher.combine(prerelease)
   }
 }

@@ -18,6 +18,8 @@ struct SemanticVersionTests {
     #expect(version.major == major)
     #expect(version.minor == minor)
     #expect(version.patch == patch)
+    #expect(version.prerelease == nil)
+    #expect(version.buildMetadata == nil)
   }
 
   @Test(

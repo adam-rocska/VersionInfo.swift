@@ -70,7 +70,8 @@ struct ConsumerUsageTests {
     try GitFixture.create(
       in: consumerDirectory,
       tags: [
-        "2.4.6": GitFixture.tagHash
+        "2.4.6": GitFixture.tagHash,
+        "2.4.6-rc.1+build.7": GitFixture.featureHash,
       ]
     )
 
@@ -85,9 +86,14 @@ struct ConsumerUsageTests {
 
       let releaseRef = versions.tags.first { $0.name == "2.4.6" }!
       let release = SemanticVersion(releaseRef)!
+      let prereleaseRef = versions.tags.first { $0.name == "2.4.6-rc.1+build.7" }!
+      let prerelease = SemanticVersion(prereleaseRef)!
 
       print("head=\\(versions.head.name):\\(versions.head.hash)")
       print("release=\\(release)")
+      print("prerelease=\\(prerelease)")
+      print("metadata=\\(prerelease.prerelease!):\\(prerelease.buildMetadata!)")
+      print("releaseOrder=\\(prerelease < release)")
       """
     )
 
@@ -101,5 +107,8 @@ struct ConsumerUsageTests {
 
     #expect(result.stdout.contains("head=main:\(GitFixture.mainHash)"))
     #expect(result.stdout.contains("release=2.4.6"))
+    #expect(result.stdout.contains("prerelease=2.4.6-rc.1+build.7"))
+    #expect(result.stdout.contains("metadata=rc.1:build.7"))
+    #expect(result.stdout.contains("releaseOrder=true"))
   }
 }
