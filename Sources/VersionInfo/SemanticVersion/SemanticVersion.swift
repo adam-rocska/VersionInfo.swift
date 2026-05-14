@@ -1,4 +1,4 @@
-public struct SemanticVersion {
+public struct SemanticVersion: Sendable {
   public let major: Int
   public let minor: Int
   public let patch: Int

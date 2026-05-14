@@ -20,6 +20,18 @@ struct SemanticVersionEdgeCaseTests {
     #expect(version == SemanticVersion(major: 7, minor: 8, patch: 9))
   }
 
+  @Test("Conforms to LosslessStringConvertible")
+  func losslessStringConvertibleConformance() {
+    let version = SemanticVersion(major: 1, minor: 2, patch: 3)
+
+    #expect(roundTrip(version) == version)
+  }
+
+  @Test("Conforms to Sendable")
+  func sendableConformance() {
+    requireSendable(SemanticVersion(major: 1, minor: 2, patch: 3))
+  }
+
   @Test(
     "Rejects signed or negative numeric components",
     arguments: [
@@ -102,4 +114,12 @@ struct SemanticVersionEdgeCaseTests {
       try JSONDecoder().decode(SemanticVersion.self, from: Data("{\"version\":\"1.2.3\"}".utf8))
     }
   }
+
+  private func roundTrip<T>(_ value: T) -> T?
+  where T: LosslessStringConvertible {
+    T(value.description)
+  }
+
+  private func requireSendable<T>(_ value: T)
+  where T: Sendable {}
 }
