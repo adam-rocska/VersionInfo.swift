@@ -1,5 +1,11 @@
 # VersionInfo.swift
 
+[![CI](https://github.com/adam-rocska/VersionInfo.swift/actions/workflows/ci.yml/badge.svg)](https://github.com/adam-rocska/VersionInfo.swift/actions/workflows/ci.yml)
+[![Release](https://github.com/adam-rocska/VersionInfo.swift/actions/workflows/release.yml/badge.svg)](https://github.com/adam-rocska/VersionInfo.swift/actions/workflows/release.yml)
+[![Swift Package Index](https://img.shields.io/endpoint?url=https://swiftpackageindex.com/api/packages/adam-rocska/VersionInfo.swift/badge?type=swift-versions)](https://swiftpackageindex.com/adam-rocska/VersionInfo.swift)
+[![Platforms](https://img.shields.io/endpoint?url=https://swiftpackageindex.com/api/packages/adam-rocska/VersionInfo.swift/badge?type=platforms)](https://swiftpackageindex.com/adam-rocska/VersionInfo.swift)
+[![Documentation](https://img.shields.io/badge/DocC-Swift%20Package%20Index-blue)](https://swiftpackageindex.com/adam-rocska/VersionInfo.swift/documentation/versioninfo)
+
 Compile your Swift package's Git identity into the target that needs it.
 
 VersionInfo.swift is a small Swift Package Manager plugin and library for
@@ -50,7 +56,7 @@ Add VersionInfo.swift to your package dependencies:
 ```swift
 dependencies: [
   .package(
-    url: "https://github.com/adam-rocska/VersionInfo.swift",
+    url: "https://github.com/adam-rocska/VersionInfo.swift.git",
     from: "1.0.0"
   )
 ]

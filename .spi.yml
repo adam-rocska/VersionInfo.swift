@@ -1,0 +1,8 @@
+# Swift Package Index configuration.
+# The first documentation target becomes the package documentation landing page.
+
+version: 1
+builder:
+  configs:
+    - documentation_targets:
+        - VersionInfo

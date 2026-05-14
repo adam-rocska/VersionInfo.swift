@@ -9,7 +9,7 @@ Add VersionInfo.swift to your package dependencies:
 ```swift
 dependencies: [
   .package(
-    url: "https://github.com/adam-rocska/VersionInfo.swift",
+    url: "https://github.com/adam-rocska/VersionInfo.swift.git",
     from: "1.0.0"
   )
 ]

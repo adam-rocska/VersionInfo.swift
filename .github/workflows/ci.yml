@@ -1,14 +1,30 @@
 name: CI
 
 on:
-  push:
   pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+    tags:
+      - "*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   linux:
     name: Linux Swift ${{ matrix.swift }}
     runs-on: ubuntu-latest
     container: swift:${{ matrix.swift }}
+    timeout-minutes: 20
+
     strategy:
       fail-fast: false
       matrix:
@@ -18,19 +34,56 @@ jobs:
           - "6.2"
 
     steps:
-      - uses: actions/checkout@v4
-      - run: swift --version
-      - run: swift build
-      - run: swift test
-      - run: swift test -c release
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Build
+        run: swift build
+
+      - name: Test
+        run: swift test
+
+      - name: Release test
+        run: swift test -c release
 
   macos:
-    name: macOS
+    name: macOS Swift
     runs-on: macos-15
+    timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v4
-      - run: swift --version
-      - run: swift build
-      - run: swift test
-      - run: swift test -c release
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Validate manifest
+        run: swift package dump-package
+
+      - name: Build
+        run: swift build
+
+      - name: Test
+        run: swift test
+
+      - name: Release test
+        run: swift test -c release
+
+      - name: Coverage test
+        run: swift test --enable-code-coverage
+
+  documentation:
+    name: DocC
+    runs-on: macos-15
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Build documentation
+        run: swift package generate-documentation --target VersionInfo

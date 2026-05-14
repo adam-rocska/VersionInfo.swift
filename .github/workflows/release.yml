@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "*"
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "SemVer release tag, without a v prefix."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Release Validation
+    runs-on: macos-15
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          case "${GITHUB_EVENT_NAME}" in
+            release)
+              version="${{ github.event.release.tag_name }}"
+              ;;
+            workflow_dispatch)
+              version="${{ inputs.version }}"
+              ;;
+            *)
+              version="${GITHUB_REF_NAME}"
+              ;;
+          esac
+
+          if [[ "${version}" == v* ]]; then
+            echo "Release tags must not use a v prefix: ${version}" >&2
+            exit 1
+          fi
+
+          if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Release tag is not SemVer: ${version}" >&2
+            exit 1
+          fi
+
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Confirm tag exists
+        if: github.event_name != 'workflow_dispatch'
+        run: git rev-parse "${{ steps.version.outputs.version }}"
+
+      - name: Validate manifest
+        run: swift package dump-package
+
+      - name: Build
+        run: swift build
+
+      - name: Test
+        run: swift test
+
+      - name: Release test
+        run: swift test -c release
+
+      - name: Coverage test
+        run: swift test --enable-code-coverage
+
+      - name: Build documentation
+        run: swift package generate-documentation --target VersionInfo
+
+      - name: Archive documentation
+        run: |
+          set -euo pipefail
+          tar -czf VersionInfo.doccarchive.tgz \
+            -C .build/plugins/Swift-DocC/outputs \
+            VersionInfo.doccarchive
+
+      - name: Upload documentation archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: VersionInfo-${{ steps.version.outputs.version }}-DocC
+          path: VersionInfo.doccarchive.tgz
+          if-no-files-found: error

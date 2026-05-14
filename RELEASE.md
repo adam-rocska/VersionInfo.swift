@@ -19,6 +19,8 @@ versions through a focused library API.
 - `SemanticVersion` with prerelease and build metadata support.
 - Swift 6-friendly API with `Sendable` and Swift Testing coverage.
 - DocC documentation and a complete README for first-time users.
+- GitHub Actions validation for pull requests, tags, and releases.
+- Swift Package Index configuration for hosted DocC documentation.
 
 ### Public Products
 
@@ -46,6 +48,7 @@ versions through a focused library API.
 - [ ] Review `README.md`.
 - [ ] Review `CHANGELOG.md`.
 - [ ] Review this release note.
+- [ ] Confirm the `CI` and `Release` GitHub Actions workflows pass.
 
 ## Suggested Verification Commands
 
@@ -74,14 +77,21 @@ If available in the installed toolchain:
 swift package generate-documentation --target VersionInfo
 ```
 
-## Tagging
+## Release Command
 
 Use a SemVer tag without a prefix:
 
 ```sh
-git tag 1.0.0
-git push origin 1.0.0
+gh release create 1.0.0 \
+  --target master \
+  --title 1.0.0 \
+  --notes-file RELEASE.md
 ```
+
+Do not use `v1.0.0`. The tag is `1.0.0`.
+
+The release workflow validates SemVer tag format, builds, tests, runs coverage,
+and builds DocC documentation.
 
 ## Swift Package Index Notes
 
@@ -92,6 +102,7 @@ This release is prepared for Swift Package Index with:
 - A documented plugin product.
 - Test coverage for plugin behavior through consumer-package acceptance tests.
 - DocC content under the `VersionInfo` target.
+- `.spi.yml` declaring `VersionInfo` as the documentation landing target.
 
-Before tagging, Linux test results and Android/Wasm cross-build results should
-be captured in CI or release notes.
+Swift Package Index should discover the public `1.0.0` release tag, build the
+package, and host DocC documentation from the declared documentation target.

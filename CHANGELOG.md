@@ -23,6 +23,10 @@ All notable changes to this package are documented here.
 - Added unit, integration, regression-prepared, and user acceptance test
   coverage using Swift Testing.
 - Added DocC documentation and a release-focused README.
+- Added GitHub community files, issue templates, pull request template, security
+  policy, and contribution guide.
+- Added GitHub Actions validation for pull requests, tags, and releases.
+- Added Swift Package Index configuration for hosted DocC documentation.
 
 ### Notes
 
