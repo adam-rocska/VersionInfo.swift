@@ -1,10 +1,32 @@
+/// A semantic version.
+///
+/// `SemanticVersion` parses and compares SemVer-style values such as `1.2.3`,
+/// `1.2.3-rc.1`, and `1.2.3+build.42`.
 public struct SemanticVersion: Sendable {
+  /// The major version component.
   public let major: Int
+
+  /// The minor version component.
   public let minor: Int
+
+  /// The patch version component.
   public let patch: Int
+
+  /// The prerelease identifiers, without the leading hyphen.
+  ///
+  /// For `1.0.0-rc.1`, this value is `rc.1`.
   public let prerelease: String?
+
+  /// The build metadata identifiers, without the leading plus sign.
+  ///
+  /// Build metadata is preserved in ``description`` and `Codable` output, but
+  /// it is not used for equality, hashing, or ordering.
   public let buildMetadata: String?
 
+  /// Creates a semantic version from its components.
+  ///
+  /// Invalid metadata values assert in debug builds and are ignored in optimized
+  /// builds. Prefer ``init(_:)`` when accepting user or external input.
   public init(
     major: Int,
     minor: Int,
@@ -31,6 +53,12 @@ public struct SemanticVersion: Sendable {
       : nil
   }
 
+  /// Creates a semantic version by parsing a string.
+  ///
+  /// The parser accepts `major.minor.patch`, optional prerelease identifiers,
+  /// and optional build metadata. It rejects malformed versions, empty
+  /// components, non-ASCII identifiers, and numeric identifiers with invalid
+  /// leading zeroes.
   public init?(_ string: String) {
     let buildComponents = string.split(
       separator: "+",
@@ -75,6 +103,9 @@ public struct SemanticVersion: Sendable {
     )
   }
 
+  /// Creates a semantic version from a generated Git ref tuple.
+  ///
+  /// The tuple's `name` field is parsed as a semantic version.
   public init?(_ version: Version) { self.init(version.name) }
 }
 
