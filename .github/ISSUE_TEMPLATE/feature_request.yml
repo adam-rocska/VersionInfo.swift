@@ -1,0 +1,66 @@
+name: Feature request
+description: Request one new capability.
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep this to one capability. Bundles belong in separate issues.
+  - type: input
+    id: actor
+    attributes:
+      label: Actor
+      description: Role-based actor or persona.
+      placeholder: "Swift package maintainer"
+    validations:
+      required: true
+  - type: textarea
+    id: capability
+    attributes:
+      label: Capability
+      description: I would like to...
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: So that I...
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Desired behavior
+      render: gherkin
+      value: |
+        Feature:
+
+        Scenario: Happy path
+          Given
+          When
+          Then
+
+        Scenario: Validation / Negative
+          Given
+          When
+          Then
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility impact
+      description: Public API, SwiftPM plugin, generated output, platform, or release impact.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Preflight
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: This request is one capability, not a bundle.
+          required: true

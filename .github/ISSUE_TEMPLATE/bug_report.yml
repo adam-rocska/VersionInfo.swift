@@ -1,0 +1,89 @@
+name: Bug report
+description: Report one observable defect.
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report exactly one defect. If this is security-sensitive, stop and use private vulnerability reporting.
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+  - type: dropdown
+    id: usage-mode
+    attributes:
+      label: Usage mode
+      options:
+        - Plugin only
+        - Library only
+        - Plugin and library together
+        - Command line generator
+    validations:
+      required: true
+  - type: input
+    id: package-version
+    attributes:
+      label: VersionInfo.swift version or commit
+      placeholder: "1.0.0 or commit SHA"
+    validations:
+      required: true
+  - type: input
+    id: swift-version
+    attributes:
+      label: Swift version
+      placeholder: "swift --version"
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      placeholder: "macOS 15 arm64, Ubuntu 24.04 x86_64, ..."
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Provide the smallest package, commands, or code path that demonstrates the problem.
+      render: gherkin
+      value: |
+        Feature:
+
+        Scenario:
+          Given
+          When
+          Then
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Logs, generated output, failing assertion, or screenshots. Remove secrets and private data.
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Preflight
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: I can reproduce this with the version or commit listed above.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true

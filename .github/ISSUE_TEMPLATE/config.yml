@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/adam-rocska/VersionInfo.swift/security/advisories/new
+    about: Report exploitable or sensitive issues privately.
+  - name: Questions and design discussion
+    url: https://github.com/adam-rocska/VersionInfo.swift/discussions
+    about: Use discussions for open-ended usage or design questions.
