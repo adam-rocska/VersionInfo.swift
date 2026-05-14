@@ -2,6 +2,9 @@
 
 Use `SemanticVersion` to parse, compare, encode, and decode semantic versions.
 
+Use this library type when a Git tag, package version, release name, or external
+string needs to be treated as SemVer instead of just text.
+
 ## Parse a Version
 
 ```swift
@@ -108,3 +111,16 @@ let encoded = try JSONEncoder().encode(SemanticVersion("1.2.3")!)
 ```
 
 Decoding validates the string before creating a value.
+
+## Generated Tags
+
+Generated Git tag refs use the same tuple shape as ``Version``. That means tags
+from the plugin can be parsed directly:
+
+```swift
+let semanticTags = versions.tags.compactMap(SemanticVersion.init)
+let latest = semanticTags.max()
+```
+
+Malformed tag names are ignored by `compactMap`, which is often exactly what you
+want in repositories that contain both release tags and operational tags.

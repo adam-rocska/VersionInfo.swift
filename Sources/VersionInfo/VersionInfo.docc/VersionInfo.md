@@ -1,7 +1,6 @@
 # ``VersionInfo``
 
-Build-time Git version information and semantic version tools for Swift
-packages.
+Build-time Git identity and semantic version tools for Swift packages.
 
 ## Overview
 
@@ -10,14 +9,15 @@ VersionInfo.swift helps a Swift package know what it was built from.
 The package has two parts:
 
 - `VersionInfoPlugin`, a Swift Package Manager build tool plugin that generates
-  a `versions` value in your target.
+  a `versions` value in the target that declares the plugin.
 - `VersionInfo`, a library that parses, compares, encodes, and decodes semantic
   versions.
 
 You can use the plugin without the library, the library without the plugin, or
 both together.
 
-The plugin reads Git metadata at build time and emits Swift source. Your
+The plugin reads Git metadata at build time and emits Swift source. SwiftPM
+compiles that source into your target before the target finishes building. Your
 application does not need to call `git` at runtime.
 
 The library and generated Swift source are intended for cross-platform Swift
@@ -56,16 +56,22 @@ equality, hashing, or ordering.
 
 ## Topics
 
-### Getting Started
+### Start Here
 
 - <doc:GettingStarted>
-- <doc:GeneratedVersionInformation>
-- <doc:SemanticVersionGuide>
+- <doc:WhyVersionInfo>
+- <doc:BuildProcess>
 
 ### Generated Git Refs
 
+- <doc:GeneratedVersionInformation>
 - ``Version``
 
 ### Semantic Versions
 
+- <doc:SemanticVersionGuide>
 - ``SemanticVersion``
+
+### Platforms
+
+- <doc:CrossPlatformSupport>

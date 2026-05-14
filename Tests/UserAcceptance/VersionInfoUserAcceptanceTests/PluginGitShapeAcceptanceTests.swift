@@ -220,4 +220,50 @@ struct PluginGitShapeAcceptanceTests {
     #expect(result.stdout.contains("heads=main"))
     #expect(result.stdout.contains("tags=1.2.3"))
   }
+
+  @Test("Plugin refreshes generated values before target compilation")
+  func pluginRefreshesGeneratedValuesBeforeCompilation() throws {
+    let temporaryDirectory = try TemporaryDirectory()
+    let consumerDirectory = try temporaryDirectory.createDirectory("RefreshingConsumer")
+    try GitFixture.create(in: consumerDirectory)
+
+    let consumer = try ConsumerPackage.create(
+      in: consumerDirectory,
+      name: "RefreshingConsumer",
+      dependencies: "",
+      targetDependencies: "",
+      plugins: ".plugin(name: \"VersionInfoPlugin\", package: \"VersionInfo.swift\"),",
+      main: """
+      print("head=\\(versions.head.name):\\(versions.head.hash)")
+      """
+    )
+
+    let swiftPM = try SwiftPM(
+      workingDirectory: consumer.directory,
+      stateDirectory: temporaryDirectory.appending("swiftpm-state")
+    )
+
+    let firstResult = try swiftPM.run([
+      "run",
+      consumer.executableName,
+    ])
+    #expect(firstResult.stdout.contains("head=main:\(GitFixture.mainHash)"))
+
+    let mainRef = consumerDirectory
+      .appendingPathComponent(".git", isDirectory: true)
+      .appendingPathComponent("refs", isDirectory: true)
+      .appendingPathComponent("heads", isDirectory: true)
+      .appendingPathComponent("main")
+    try "\(GitFixture.releaseHash)\n".write(
+      to: mainRef,
+      atomically: true,
+      encoding: .utf8
+    )
+
+    let secondResult = try swiftPM.run([
+      "run",
+      consumer.executableName,
+    ])
+    #expect(secondResult.stdout.contains("head=main:\(GitFixture.releaseHash)"))
+  }
 }

@@ -16,7 +16,8 @@ The executable reads Git metadata from a `.git` directory, resolves the current
 
 Most users should use `VersionInfoPlugin` instead of calling this executable
 directly. The executable exists as a separate product so the build tool plugin
-can invoke it through Swift Package Manager.
+can invoke it through Swift Package Manager before the consuming target
+compiles.
 
 ## Usage
 
@@ -40,6 +41,9 @@ typealias Versions = (head: Version, heads: [Version], tags: [Version])
 
 let versions: Versions
 ```
+
+The output is plain Swift source. It does not import `VersionInfo` and does not
+call Git at runtime.
 
 ## Git Metadata
 

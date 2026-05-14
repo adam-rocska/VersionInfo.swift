@@ -1,58 +1,47 @@
 # VersionInfo.swift
 
-VersionInfo.swift gives Swift packages build-time access to their own Git
-version information.
+Compile your Swift package's Git identity into the target that needs it.
 
-It ships two pieces that can be used separately or together:
+VersionInfo.swift is a small Swift Package Manager plugin and library for
+answering a deceptively annoying question:
 
-- `VersionInfoPlugin`, a Swift Package Manager build tool plugin that generates
-  a small Swift file in your target at build time.
-- `VersionInfo`, a tiny library for working with semantic versions and the
-  generated Git ref tuples.
+> What version of this code is actually running?
 
-The plugin does not call `git` at runtime. It reads the repository metadata at
-build time and compiles the result into your binary.
+Attach the plugin to a target, and SwiftPM generates a tiny Swift file before
+that target compiles. Your code then reads a normal `versions` value. No shell
+scripts in your app, no runtime `git` calls, no platform-specific build phase.
 
-## What Problem Does It Solve?
+## Why It Exists
 
-Applications often need to answer simple questions:
+Real Swift projects often need build identity in places where Git is unavailable
+or should not be touched:
 
-- What commit was this binary built from?
-- What branch or tag was visible at build time?
-- Is the current tag a valid semantic version?
-- How does this version compare with another release?
+- command line `--version` output
+- server health and diagnostics endpoints
+- crash reports and support bundles
+- release automation checks
+- debug screens in apps
+- test fixtures that need to assert the exact built commit
 
-You can solve those questions with shell scripts, environment variables, custom
-build phases, or runtime calls to `git`. Those approaches tend to be fragile,
-platform-specific, or hard to reuse across Swift packages.
+The awkward part is not the data. Git already has the data. The awkward part is
+getting it into Swift code in a way that is native to SwiftPM, reusable across
+packages, friendly to cross-platform builds, and boring at runtime.
 
-VersionInfo.swift keeps the workflow native to Swift Package Manager:
+VersionInfo.swift does that by moving the Git lookup to build time and compiling
+the result into your target.
 
-1. Add a package dependency.
-2. Attach a build tool plugin to a target.
-3. Use the generated `versions` value from normal Swift code.
+## Products
 
-## Platform Support
+The package ships three products:
 
-- Swift tools version 6.0 or newer.
-- Swift Package Manager.
-- A package checkout with a `.git` directory or `.git` file.
+- `VersionInfoPlugin`: a SwiftPM build tool plugin that generates `versions`.
+- `VersionInfo`: a library with `SemanticVersion` and the shared `Version`
+  tuple shape.
+- `version-info-gen`: the executable used by the plugin. Most users never call
+  it directly.
 
-The package is designed for cross-platform Swift projects:
-
-- Apple platforms declared in `Package.swift`: macOS 14, iOS 16, watchOS 9,
-  tvOS 17, and visionOS 1.
-- Linux for server-side Swift.
-- Android and WebAssembly/WASI through Swift SDK cross-compilation.
-
-The public `VersionInfo` library and the generated Swift source are
-Foundation-free and use only Swift language and standard library features. The
-build tool plugin and `version-info-gen` executable run on the build host and
-use SwiftPM, Foundation file APIs, and a filesystem-backed Git checkout.
-
-For 1.0.0 release confidence, macOS and Linux builds/tests should pass, and the
-library target should be cross-built with the official Android and Wasm Swift
-SDKs before tagging.
+Use the plugin by itself when you only need Git refs. Add the library when you
+also want strict semantic version parsing, comparison, encoding, and decoding.
 
 ## Installation
 
@@ -80,14 +69,21 @@ Attach the plugin to the target that needs build information:
 )
 ```
 
-Then use the generated `versions` value from that target:
+Then read `versions` from normal Swift code in that target:
 
 ```swift
-print(versions.head.name)
-print(versions.head.hash)
+print("built from \(versions.head.name)")
+print("commit \(versions.head.hash)")
 ```
 
-The generated value has this shape:
+That is the whole plugin-only path.
+
+You do not import `VersionInfo` for this. The plugin generates source directly
+inside the target that declares the plugin.
+
+## What Gets Generated
+
+The plugin generates a Swift file with this shape:
 
 ```swift
 typealias Version = (name: String, hash: String)
@@ -96,17 +92,44 @@ typealias Versions = (head: Version, heads: [Version], tags: [Version])
 let versions: Versions
 ```
 
-For a repository whose `HEAD` points at `main`, `versions.head` might look like
-this:
+For a repository whose `HEAD` points at `main`, `versions.head` might be:
 
 ```swift
 (name: "main", hash: "1111111111111111111111111111111111111111")
 ```
 
-## Using the Plugin Only
+The generated value records:
 
-Use this when you only need the generated Git refs and do not need semantic
-version parsing.
+- `versions.head`: the current `HEAD`, either a branch name or detached `HEAD`.
+- `versions.heads`: local branch refs found in the repository metadata.
+- `versions.tags`: tag refs found in the repository metadata.
+
+## Build Process
+
+`VersionInfoPlugin` is attached to a target in `Package.swift`. SwiftPM invokes
+the plugin as part of that target's build plan.
+
+The plugin registers a build tool command. SwiftPM runs that command before it
+compiles the target whenever the generated source is needed or one of the
+declared Git metadata inputs changes.
+
+The command runs `version-info-gen`, reads the package checkout's `.git`
+metadata, and writes a generated `VersionInfo.swift` source file into SwiftPM's
+plugin work directory.
+
+SwiftPM then compiles that generated file into the target. From your code's
+point of view, `versions` is just another top-level Swift value.
+
+Because the generated file is built into your binary:
+
+- your app does not need Git at runtime
+- deployed artifacts keep the build identity they were compiled with
+- the plugin can be used without linking the `VersionInfo` library
+- changed Git metadata inputs are picked up by SwiftPM's build planning
+
+## Plugin Only
+
+Use this when you only need generated Git refs:
 
 ```swift
 .target(
@@ -119,22 +142,16 @@ version parsing.
 
 ```swift
 let head = versions.head
-let tags = versions.tags.map(\.name)
+let tagNames = versions.tags.map(\.name)
 
 print("built from \(head.name) at \(head.hash)")
-print("visible tags: \(tags)")
+print("visible tags: \(tagNames)")
 ```
 
-The plugin records:
+## Library Only
 
-- `versions.head`: the current `HEAD`, either a branch name or detached `HEAD`.
-- `versions.heads`: local branch refs found in the repository metadata.
-- `versions.tags`: tag refs found in the repository metadata.
-
-## Using the Library Only
-
-Use this when you want semantic version parsing and comparison without generated
-Git information.
+Use this when you want semantic version behavior without generated Git
+information:
 
 ```swift
 .target(
@@ -148,8 +165,8 @@ Git information.
 ```swift
 import VersionInfo
 
-let current = SemanticVersion("1.2.0")
-let minimum = SemanticVersion("1.1.0")
+let current = SemanticVersion("1.2.0")!
+let minimum = SemanticVersion("1.1.0")!
 
 print(current > minimum)
 ```
@@ -167,10 +184,10 @@ print(current > minimum)
 - `ExpressibleByStringLiteral`
 - `Sendable`
 
-## Using the Plugin and Library Together
+## Plugin and Library Together
 
-Use both products when your Git tags are semantic versions and your code needs
-to reason about them.
+Use both products when your Git tags are semantic versions and your Swift code
+needs to reason about them:
 
 ```swift
 .target(
@@ -187,8 +204,8 @@ to reason about them.
 ```swift
 import VersionInfo
 
-let releaseTags = versions.tags.compactMap(SemanticVersion.init)
-let latest = releaseTags.max()
+let semanticTags = versions.tags.compactMap(SemanticVersion.init)
+let latest = semanticTags.max()
 
 if let latest {
   print("latest semantic tag: \(latest)")
@@ -207,7 +224,7 @@ if let tag = versions.tags.first(where: { $0.name == "1.0.0" }),
 
 ## Semantic Version Behavior
 
-`SemanticVersion` follows SemVer precedence rules for ordering:
+`SemanticVersion` follows SemVer precedence rules:
 
 ```swift
 let prerelease = SemanticVersion("1.0.0-rc.1")!
@@ -221,7 +238,7 @@ Numeric prerelease identifiers are compared numerically without converting them
 to `Int`, so very large identifiers compare correctly without overflow.
 
 Build metadata is retained for display, encoding, and decoding, but it is not
-part of version precedence:
+part of equality, hashing, or ordering:
 
 ```swift
 let local = SemanticVersion("1.0.0+local.1")!
@@ -246,11 +263,32 @@ shapes commonly produced by Git:
 - detached `HEAD`
 - nested branch and tag names
 
-No runtime Git dependency is introduced into your application.
+## Platform Support
+
+VersionInfo.swift uses Swift tools version 6.0.
+
+The public `VersionInfo` library and the generated Swift source use Swift
+language and standard library features only. They are intended for:
+
+- Apple platforms declared in `Package.swift`: macOS 14, iOS 16, watchOS 9,
+  tvOS 17, and visionOS 1
+- Linux for server-side Swift
+- Android through the official Swift Android SDK
+- WebAssembly/WASI through the official Swift Wasm SDK
+
+The plugin and `version-info-gen` executable run on the build host. They use
+SwiftPM, Foundation file APIs, and a filesystem-backed Git checkout. When
+cross-compiling, the host toolchain runs the plugin and the target SDK compiles
+your target.
+
+For 1.0.0 release confidence, macOS and Linux builds/tests should pass, and the
+library target should be cross-built with the official Android and Wasm Swift
+SDKs before tagging.
 
 ## Command Line Generator
 
-The executable product is mostly used by the plugin, but it can be run directly:
+Most users should use the plugin. The executable product is public because the
+plugin needs it, and it can be useful for debugging:
 
 ```sh
 swift run version-info-gen .git
@@ -266,25 +304,19 @@ swift run version-info-gen .git --output-dir Generated
 
 DocC documentation is included in the `VersionInfo` target. It covers:
 
-- getting started with the build tool plugin
+- adding the plugin to a target
+- how SwiftPM includes the generated source
 - the generated `versions` API
 - semantic version parsing and comparison
-- the design choices behind the tuple bridge and build metadata behavior
+- cross-platform expectations
+- the design choices behind the tuple bridge
 
-## Design Notes
+Generate or preview the docs with SwiftPM:
 
-`Version` is intentionally a tuple:
-
-```swift
-public typealias Version = (name: String, hash: String)
+```sh
+swift package generate-documentation --target VersionInfo
+swift package --disable-sandbox preview-documentation --target VersionInfo
 ```
-
-The generated code uses the same shape. This keeps plugin-only users free from
-any runtime library dependency, while library users can still pass generated
-refs directly to `SemanticVersion`.
-
-The plugin output is static Swift source. Once your target is built, reading
-`versions.head` is just reading a compiled value.
 
 ## Quality
 
@@ -294,9 +326,9 @@ The package is tested with Swift Testing. The suite covers:
 - integration behavior for the command line generator
 - user acceptance flows with temporary consumer packages
 - plugin behavior across loose refs, packed refs, `.git` files, detached `HEAD`,
-  and nested ref names
+  nested ref names, and regenerated Git metadata
 
-For release confidence, run:
+For local confidence, run:
 
 ```sh
 swift test
